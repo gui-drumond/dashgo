@@ -68,7 +68,7 @@ export default function Dashboard(){
           <Box
             bg="gray.800"
             borderRadius={8}
-            p="8"
+            p={["6","8"]}
             pb="4"
           >
             <Text fontSize="lg" mb="4"> Inscritos da Semana</Text>
@@ -77,7 +77,7 @@ export default function Dashboard(){
           <Box
             bg="gray.800"
             borderRadius={8}
-            p="8"
+            p={["6","8"]}
             pb="4"
           >
             <Text fontSize="lg" mb="4"> Taxa de Abertura</Text>

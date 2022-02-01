@@ -1,17 +1,30 @@
 import React, { useState } from 'react'
-import { Box, Button, Checkbox, Flex, Heading, Icon, Table, Tbody, Th, Thead, Tr, Td, Text, useBreakpointValue, Spinner} from '@chakra-ui/react'
+import { Box, Button, Checkbox, Flex, Heading, Icon, Table, Tbody, Th, Thead, Tr, Td, Text, useBreakpointValue, Spinner, Link} from '@chakra-ui/react'
 import { RiAddLine, RiPencilLine } from 'react-icons/ri'
 import { Header } from "../../components/Header"
 import { SideBar } from "../../components/Sidebar"
 import { Pagination } from '../../components/Pagination'
-import Link from 'next/link'
-import { useQuery } from 'react-query'
+import NextLink from 'next/link'
+import { getUsers, useUsers } from '../../services/hooks/useUsers'
+import { queryClient } from '../../services/queryClient'
 import { api } from '../../services/api'
-import { useUsers } from '../../services/hooks/useUsers'
+import { GetServerSideProps } from 'next'
 
-export default function UserList(){
+
+export default function UserList({ users }){
   const [page, setPage ] = useState(1);
-  const { isLoading, data, error, isFetching } = useUsers(page)
+  const { isLoading, data, error, isFetching } = useUsers(page, {
+    initialData: users
+  })
+
+  async function handlePrefetchUser(userId: number){
+    await queryClient.prefetchQuery(['user', userId], async () => {
+      const response = await api.get(`users/${userId}`)
+      return response.data;
+    }, {
+      staleTime: 1000 * 60 * 10, //10 minutes
+    })
+  }
 
   const isWideVersion = useBreakpointValue({
     base: false,
@@ -28,7 +41,7 @@ export default function UserList(){
               Usuários 
               { !isLoading && isFetching && <Spinner size="sm" color="gray.500" ml="4"/>}
             </Heading>
-            <Link href="/users/create" passHref>
+            <NextLink href="/users/create" passHref>
               <Button
                     as="a"
                     size="sm"
@@ -39,7 +52,7 @@ export default function UserList(){
 
                     Criar Novo
                 </Button>
-              </Link>
+              </NextLink>
           </Flex>
           {isLoading ? (
           <Flex justify="center"> 
@@ -72,7 +85,11 @@ export default function UserList(){
                     </Td>
                     <Td>
                       <Box>
-                        <Text fontWeight="bold"> {user.name} </Text>
+                        <Link
+                         color="purple.400"
+                         onMouseEnter={() => handlePrefetchUser(Number(user.id))}>
+                          <Text fontWeight="bold"> {user.name} </Text>
+                        </Link>
                         <Text fontSize="sm" color="gray.300"> {user.email} </Text>
                       </Box>
                     </Td>
@@ -104,4 +121,16 @@ export default function UserList(){
       </Flex>
     </Box>
   )
+}
+
+
+export const getServerSideProps: GetServerSideProps = async () => {
+
+  const { users,  totalCount } = await getUsers(1)
+  console.log(users)
+  return {
+    props:{
+      users,
+    }
+  }
 }

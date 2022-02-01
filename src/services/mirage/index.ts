@@ -1,4 +1,4 @@
-import { createServer, Factory, Model , Response} from 'miragejs'
+import { ActiveModelSerializer, createServer, Factory, Model , Response} from 'miragejs'
 import faker from 'faker';
 
 type User = {
@@ -9,6 +9,11 @@ type User = {
 
 export function makeServer(){
   const server = createServer({
+    //Ajuda a trabalhar com relacionamento de dados 
+    //Deve ser utilizado em todas as aplicacoes, envio e recebimento de dados de uma aplicacao RestFull
+    serializers:{
+      application: ActiveModelSerializer //Serve para tratar os dados vindos da Api, modelo ORM-(tudo em um requisao unica)
+    },  
     models:{
       //Partial significa que nao obrigatoriamente necessitamos de todos os campos da tipagem
       user: Model.extend<Partial<User>>({})
@@ -33,7 +38,7 @@ export function makeServer(){
     routes(){
       // rodar o barra do nosso localhost, cuidado para nao colocar o mesmo nome da pasta api (o padrao do nextJS) 
       this.namespace = 'api';  
-      this.timing = 750; // tempo de execucao perfeito para teste de loaders
+      this.timing = 550; // tempo de execucao perfeito para teste de loaders
 
       this.get('/users', function (schema, request) {
         const { page = 1, per_page = 10 } = request.queryParams
@@ -52,9 +57,9 @@ export function makeServer(){
           {users}
         )
       } );
+      this.get('/users/:id');
       this.post('/users');
       this.namespace = '';  
-
       this.passthrough() // fazer com que as chamadas serem passadas pelo mirage, caso nao encontrem repassam para outras rotas
     }
   })

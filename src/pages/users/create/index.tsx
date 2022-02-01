@@ -4,10 +4,15 @@ import { Header } from "../../../components/Header"
 import { SideBar } from "../../../components/Sidebar"
 import { Input } from '../../../components/Form/Input'
 import Link from 'next/link'
-
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { SubmitHandler, useForm } from 'react-hook-form'
+import { useMutation } from 'react-query'
+import { api } from '../../../services/api'
+import { queryClient } from '../../../services/queryClient'
+import { useRouter } from 'next/router'
+
+
 
 type CreateUsersFormsData = {
   name:string;
@@ -26,13 +31,33 @@ const createUsersFormSchema = yup.object().shape({
 })
 
 export default function CreateUser(){
+  const router = useRouter()
+  const createUser = useMutation(async (user: CreateUsersFormsData) => {
+    const response = await api.post('users', {
+      user:{
+        ...user,
+        created_at: new Date(),
+      }
+    })
+    return response.data.user;
+  }, {
+    onSuccess: () => {
+      //Quando fizermos a criacao de algum usuario novo, faremos atualizacao no cache de modo que seja global,
+      // 'users' seria de modo wide, sera em todas as informacoes cacheadas,
+      // ['users', 1] sera apenas na pagina 1
+      queryClient.invalidateQueries('users') 
+      router.push('/users')
+    }
+  })
+
   const { register, handleSubmit, formState } = useForm({
     resolver: yupResolver(createUsersFormSchema)
   })
 
   const handleCreateUser: SubmitHandler<CreateUsersFormsData> = async (values) => {
-    await new Promise((resolve => { setTimeout(resolve, 2000)}))
-    console.log(values)
+    console.log('teste',values)
+    await createUser.mutateAsync(values)
+    // await new Promise((resolve => { setTimeout(resolve, 2000)}))
   }
 
   return(
